@@ -1,10 +1,12 @@
 import IRegister from "./Register";
 
 export default class Device {
-    
-    public readonly registers: IRegister[];
+  public readonly slaveID: number;
 
-    constructor(registers : IRegister[]) {
-        this.registers = registers;
-    }
+  public readonly registers: IRegister[];
+
+  constructor(registers: IRegister[], slaveID: number) {
+    this.registers = registers;
+    this.slaveID = slaveID;
+  }
 }

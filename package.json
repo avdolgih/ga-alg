@@ -6,13 +6,18 @@
   "author": "bugagashkovich <bugagashkovich@yandex.ru>",
   "license": "MIT",
   "scripts": {
-    "start": "node ./dist/index.js",
+    "start": "yarn tsc --build && node ./dist/index.js",
     "build": "yarn tsc --build"
   },
   "dependencies": {
     "@types/mqtt": "^2.5.0",
+    "@types/rx": "^4.1.2",
     "modbus-serial": "^8.0.11",
     "mqtt": "^4.3.7",
+    "rxjs": "^7.8.0",
     "typescript": "^5.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "12"
   }
 }
