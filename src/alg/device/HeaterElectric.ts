@@ -1,5 +1,4 @@
 export default class HeaterElectric {
-    constructor() {
-        
-    }
+  //
+  constructor() {}
 }

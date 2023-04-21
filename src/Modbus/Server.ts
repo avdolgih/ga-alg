@@ -1,6 +1,6 @@
-import Device from "./Device";
+import Device from "../devices/Device";
 import ModbusRTU from "modbus-serial";
-import Register, { Access } from "./Register";
+import Register, { Access } from "../devices/Register";
 
 export default class Server {
   public readonly devices: Device[];
