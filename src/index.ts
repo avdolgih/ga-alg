@@ -1,6 +1,30 @@
 import Server, { Rate } from "./Modbus/Server";
 import Device from "./devices/Device";
 import Register, { Access, DataType, TIORegisterType } from "./devices/Register";
+import CWT_BK_04040202 from "./module/CWT_BK_04040202";
+
+
+const module1 = new CWT_BK_04040202(2);
+module1.subDI1((val)=>console.log("DI1 = " + val));
+module1.subDI2((val)=>console.log("DI2 = " + val));
+module1.subDI3((val)=>console.log("DI3 = " + val));
+module1.subDI4((val)=>console.log("DI4 = " + val));
+
+setInterval(() => {
+  console.log("DI1 = " + module1.getDI1());
+  console.log("DI2 = " + module1.getDI2());
+  console.log("DI3 = " + module1.getDI3());
+  console.log("DI4 = " + module1.getDI4());
+});
+
+module1.writeAO1(30);
+module1.writeAO2(70);
+
+module1.writeDO1(true);
+module1.writeDO2(true);
+module1.writeDO3(true);
+module1.writeDO4(true);
+
 
 let DIRegs = [
   new Register(0, Access.Read, DataType.UINT16, TIORegisterType.DI),
