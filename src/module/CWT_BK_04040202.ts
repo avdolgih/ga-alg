@@ -1,7 +1,17 @@
 export default class CWT_BK_04040202 {
 
+
+
     constructor(addr: number) {
 
+    }
+
+    subConnected(callback: (val: boolean) => void) {
+
+    }
+
+    getConnected(): boolean {
+        return false;
     }
 
     getDI1(): boolean {
@@ -20,6 +30,30 @@ export default class CWT_BK_04040202 {
         return false;
     }
 
+    getDO1(): boolean {
+        return false;
+    }
+
+    getDO2(): boolean {
+        return false;
+    }
+
+    getDO3(): boolean  {
+        return false;
+    }
+
+    getDO4(): boolean {
+        return false;
+    }
+
+    getAO1(): number {
+        return 0;
+    }
+
+    getAO2(): number {
+        return 0;
+    }
+
     subDI1(callback: (val: boolean) => void) {
 
     }
@@ -36,27 +70,27 @@ export default class CWT_BK_04040202 {
 
     }
 
-    writeAO1(val: number) {
+    writeAO1(val: number, callback: () => void) {
 
     }
 
-    writeAO2(val: number) {
+    writeAO2(val: number, callback: () => void) {
 
     }
 
-    writeDO1(val: boolean) {
+    writeDO1(val: boolean, callback: () => void) {
 
     }
 
-    writeDO2(val: boolean) {
+    writeDO2(val: boolean, callback: () => void) {
 
     }
 
-    writeDO3(val: boolean) {
+    writeDO3(val: boolean, callback: () => void) {
 
     }
 
-    writeDO4(val: boolean) {
+    writeDO4(val: boolean, callback: () => void) {
 
     }
 }
