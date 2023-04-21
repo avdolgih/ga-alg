@@ -2,6 +2,12 @@ import Device from "../devices/Device";
 import ModbusRTU from "modbus-serial";
 import Register, { Access } from "../devices/Register";
 
+import { ReadCoilResult } from "modbus-serial/ModbusRTU";
+import { ReadRegisterResult } from "modbus-serial/ModbusRTU";
+import { WriteCoilResult } from "modbus-serial/ModbusRTU";
+import { WriteMultipleResult } from "modbus-serial/ModbusRTU";
+import { WriteRegisterResult } from "modbus-serial/ModbusRTU";
+
 export default class Server {
   public readonly devices: Device[];
   private readonly client: ModbusRTU = new ModbusRTU();
@@ -21,12 +27,14 @@ export default class Server {
         let device = this.devices[i];
         for (let n = 0; n < device.registers.length; n++) {
           if (!this.pooling) break;
-          await new Promise((resolve, reject) => {
-            setTimeout(() => {
-              this.read(device.slaveID, device.registers[n]);
-              resolve(null);
-            }, this.interval);
-          });
+          if (device.registers[n].access === Access.Read || Access.ReadWrite) {
+            await new Promise((resolve, reject) => {
+              setTimeout(() => {
+                this.read(device.slaveID, device.registers[n]);
+                resolve(null);
+              }, this.interval);
+            });
+          }
         }
       }
     }
@@ -37,43 +45,88 @@ export default class Server {
     this.pooling = false;
   }
 
-  private async read(slaveID: number, register: Register): Promise<number> {
+  // Чтение дискретных регистров
+  public async readCoil(slaveID: number, register: Register): Promise<ReadCoilResult | void> {
+    this.client.setID(slaveID);
+    let res: ReadCoilResult;
+    if (register.registerType === "DO") {
+      res = await this.client.readCoils(register.addr, 1);
+      return res;
+    }
+    if (register.registerType === "DI") {
+      res = await this.client.readDiscreteInputs(register.addr, 1);
+      return res;
+    }
+  }
+
+  // Чтение аналоговых регистров
+  public async readRegister(slaveID: number, register: Register): Promise<ReadRegisterResult | void> {
+    this.client.setID(slaveID);
+    let res: ReadRegisterResult;
+    if (register.registerType === "AO") {
+      res = await this.client.readHoldingRegisters(register.addr, 1);
+      return res;
+    }
+    if (register.registerType === "AI") {
+      res = await this.client.readInputRegisters(register.addr, 1);
+      return res;
+    }
+  }
+
+  // Запись одного дискретного регистра
+  public async writeSingleDO(register: Register, value: boolean): Promise<WriteCoilResult> {
+    let res = await this.client.writeCoil(register.addr, value);
+    return res;
+  }
+
+  // Запись несколько дискретных регистров
+  public async writeMultipleDO(register: Register, value: boolean[]): Promise<WriteMultipleResult> {
+    let res = await this.client.writeCoils(register.addr, value);
+    return res;
+  }
+
+  // Запись одного аналогового регистра
+  public async writeSingleAO(register: Register, value: number): Promise<WriteRegisterResult> {
+    let res = await this.client.writeRegister(register.addr, value);
+    return res;
+  }
+
+  // Запись нескольких аналоговых регистров
+  public async writeMultipleAO(register: Register, value: number[]): Promise<WriteMultipleResult> {
+    let res = await this.client.writeRegisters(register.addr, value);
+    return res;
+  }
+
+  // Функция чтения для сервера
+  private async read(slaveID: number, register: Register): Promise<ReadCoilResult | ReadRegisterResult | void> {
     this.client.setID(slaveID);
     let res;
 
     switch (register.registerType) {
       case "DO":
         console.log("Чтение", register.registerType, register.addr);
-        // res = await this.client.readCoils(register.addr, 1);
+        res = await this.client.readCoils(register.addr, 1);
         break;
       case "DI":
         console.log("Чтение", register.registerType, register.addr);
-        // res = await this.client.readDiscreteInputs(register.addr, 1);
+        res = await this.client.readDiscreteInputs(register.addr, 1);
         break;
       case "AO":
         console.log("Чтение", register.registerType, register.addr);
-        // res = await this.client.readHoldingRegisters(register.addr, 1);
+        res = await this.client.readHoldingRegisters(register.addr, 1);
         break;
       case "AI":
         console.log("Чтение", register.registerType, register.addr);
-        // res = await this.client.readInputRegisters(register.addr, 1);
+        res = await this.client.readInputRegisters(register.addr, 1);
         break;
 
       default:
         break;
     }
-    console.log({ res });
+    console.log("Значение", { res });
+    console.log("________________________");
 
-    return 0;
-  }
-
-  private async write(addr: number, val: number) {
-    // Запись одного DO Force Single Coil
-    // Запись одного AO Preset Single Register
-    // Запись нескольких DO Force Multiple Coils
-    // Запись нескольких AO Preset Multiple Registers
-    console.log("Write");
-    return null;
+    return res;
   }
 }
 

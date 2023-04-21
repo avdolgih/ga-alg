@@ -18,16 +18,32 @@ let AIRegs = [
   new Register(0, Access.Read, DataType.UINT16, TIORegisterType.AI),
   new Register(1, Access.Read, DataType.UINT16, TIORegisterType.AI),
 ];
-
 let AORegs = [
   new Register(0, Access.ReadWrite, DataType.UINT16, TIORegisterType.AO),
   new Register(1, Access.ReadWrite, DataType.UINT16, TIORegisterType.AO),
 ];
-const divice = new Device(1, [...DIRegs, ...DORegs, ...AIRegs, ...AORegs]);
+const device = new Device(1, [...DIRegs, ...DORegs, ...AIRegs, ...AORegs]);
 
-const modbus = new Server([divice], "COM4", Rate.r9600, 1000);
+const modbus = new Server([device], "COM4", Rate.r9600, 1000);
 
-modbus.start();
+// Класс для хранения состояния
+// TODO: Надо переименовать
+class Getter {
+  private observers: Array<() => number | boolean> = [];
+  constructor(observers: Array<() => number | boolean>) {
+    this.observers = observers;
+  }
+  public run() {
+    this.observers.forEach((observer) => {
+      observer();
+    });
+  }
+}
+
+let getter = new Getter([device.getDI0, device.getDI1]);
+getter.run();
+
+// modbus.start();
 
 // setTimeout(() => {
 //   modbus.stop();
