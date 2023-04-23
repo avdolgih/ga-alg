@@ -1,12 +1,15 @@
-import Server, { Rate } from "./module1/Server";
-import CWT_BK_04040202 from "./module1/CWT_BK_04040202";
+// import P10P10R_event from "./module4/P10P10R";
+import { DiscreteInput } from "./module4/Port";
+import Damper from "./module4/elements/Damper";
 
+let testDamper0 = new Damper("damper0", 5000);
+let testDamper1 = new Damper("damper1", 10000);
+let testDamper2 = new Damper("damper2", 10000);
 
-const module1 = new CWT_BK_04040202(1);
-const server = new Server([module1], 'COM4', Rate.r9600);
-
-// module1.connection.sub((val) => { console.log("Подключение: " + val) });
-module1.DI1.sub((val) => console.log("DI1 = " + val));
-module1.DI2.sub((val) => console.log("DI2 = " + val));
-module1.DI3.sub((val) => console.log("DI3 = " + val));
-module1.DI4.sub((val) => console.log("DI4 = " + val));
+let start = async () => {
+  let result = await Promise.all([testDamper0.closeDamper(), testDamper1.closeDamper(), testDamper2.closeDamper()]);
+  let checker = (result: boolean[]) => result.every((v) => v === true);
+  console.log(checker(result));
+};
+start();
+testDamper0.isOpened = true;

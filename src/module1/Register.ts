@@ -11,5 +11,4 @@ export default class Register {
     this.val = new Readable<Buffer>();
     this.val.sub(changed);
   }
-
 }
