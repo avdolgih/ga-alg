@@ -7,16 +7,42 @@
   "license": "MIT",
   "scripts": {
     "start": "yarn tsc --build && node ./dist/index.js",
-    "build": "yarn tsc --build"
+    "build": "yarn tsc --build",
+    "test": "jest",
+    "test-w": "jest --watch"
   },
   "dependencies": {
     "@types/mqtt": "^2.5.0",
     "modbus-serial": "^8.0.11",
     "mqtt": "^4.3.7",
+    "node-cron": "^3.0.2",
     "node-pid-controller": "^1.0.1",
+    "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   },
   "devDependencies": {
-    "@types/node": "12"
+    "@types/jest": "^29.5.1",
+    "@types/node": "12",
+    "@types/node-cron": "^3.0.7",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0"
+  },
+  "jest": {
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "tsconfig.json"
+      }
+    },
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "testMatch": [
+      "**/tests/**/*.test.(ts)"
+    ],
+    "testEnvironment": "node"
   }
 }
