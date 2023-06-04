@@ -1,0 +1,10 @@
+listener 8080
+protocol websockets
+
+listener 1883
+protocol mqtt
+
+allow_anonymous true
+
+
+sudo snap set wpe-webkit-mir-kiosk url=http://localhost

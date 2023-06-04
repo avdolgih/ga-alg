@@ -1,0 +1,10 @@
+{
+  "apps": [
+    {
+      "name": "alg",
+      "script": "yarn",
+      "args": "start",
+      "watch": true
+    }
+  ]
+}

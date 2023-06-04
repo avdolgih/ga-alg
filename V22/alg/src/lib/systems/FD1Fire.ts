@@ -1,0 +1,170 @@
+// Система с одним вентилятором
+
+import Damper, { DamperMode } from "../machines/Damper";
+import FanDiff, { FanMode } from "../machines/Fan_diff";
+import { AlgDiscreteInput, AlgDiscreteOutput } from "../utils/AlgIO";
+import EventBus from "../utils/EventBus";
+import { SystemMode, SystemStage } from "../utils/SystemMode";
+
+export default class FD1Fire {
+  public mode: SystemMode = SystemMode.HANDMODE;
+  public stage: SystemStage = SystemStage.STOP;
+  private bus: EventBus;
+  private errorStack: string[] = [];
+  //   Подсистемы
+  public fan: FanDiff;
+  public damper: Damper;
+  public readonly systemName: string;
+  constructor(systemName: string, fanName: string, damperName: string, bus: EventBus) {
+    this.systemName = systemName;
+    this.fan = new FanDiff(systemName, fanName, bus, 10000, this.diff, this.run);
+    this.damper = new Damper(systemName, damperName, bus, 30000, this.isOpen, this.openSignal);
+    this.bus = bus;
+
+    this.bus.on("machineError", (payload) => {
+      const msg = `${payload.message}`;
+      this.errorStack.push(msg);
+
+      this.bus.emit(`MQTTSend`, { value: "ERROR", topic: "/mode/get" });
+      this.bus.emit(`MQTTSend`, { value: msg, topic: "ERROR" });
+      this.setError();
+    });
+    this.fire.subscribe(this.fireStop);
+  }
+
+  public fire = new AlgDiscreteInput();
+  public diff = new AlgDiscreteInput();
+  public run = new AlgDiscreteOutput();
+  public isOpen = new AlgDiscreteInput();
+  public openSignal = new AlgDiscreteOutput();
+
+  // ---------------------------------------------------------------------------------
+  // Ручной пуск
+  public async start() {
+    try {
+      await this.resetError();
+      if (this.mode === SystemMode.ERROR) return;
+      if (this.mode === SystemMode.HANDMODE && (this.stage === SystemStage.STARTING || this.stage === SystemStage.WORKING))
+        return;
+      this.mode = SystemMode.HANDMODE;
+      this.stage = SystemStage.STARTING;
+      this.bus.emit(`MQTTSend`, { value: "START", topic: "/mode/get" });
+      await this.damper.open();
+      if (this.stage != SystemStage.STARTING) return;
+      await this.fan.start();
+      if (this.fan.mode === FanMode.WORKING) {
+        this.stage = SystemStage.WORKING;
+
+        this.bus.emit(`MQTTSend`, { value: "true", topic: `${this.fan.subsystemName}` });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  // Остановка с выводом в ручной режим
+  public async stop() {
+    try {
+      if (this.mode === SystemMode.ERROR) return;
+      this.mode = SystemMode.HANDMODE;
+      if (this.stage === SystemStage.STOP || this.stage === SystemStage.STOPING) return;
+
+      this.stage = SystemStage.STOPING;
+      this.bus.emit(`MQTTSend`, { value: "STOP", topic: "/mode/get" });
+      await this.fan.stop();
+      if (this.stage != SystemStage.STOPING) return;
+      await this.damper.close();
+      this.stage = SystemStage.STOP;
+
+      this.bus.emit(`MQTTSend`, { value: "false", topic: `${this.fan.subsystemName}` });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  // Пуск авто
+  public async auto() {
+    try {
+      if (this.mode === SystemMode.ERROR) return;
+      if (
+        (this.mode === SystemMode.AUTO && this.stage === SystemStage.STARTING) ||
+        (this.mode === SystemMode.AUTO && this.stage === SystemStage.WORKING)
+      )
+        return;
+      this.mode = SystemMode.AUTO;
+      this.stage = SystemStage.STARTING;
+      this.bus.emit(`MQTTSend`, { value: "AUTO", topic: "/mode/get" });
+      await this.damper.open();
+      if (this.stage != SystemStage.STARTING) return;
+      await this.fan.start();
+      if (this.fan.mode === FanMode.WORKING && this.damper.mode === DamperMode.OPEN) {
+        this.stage = SystemStage.WORKING;
+
+        this.bus.emit(`MQTTSend`, { value: "true", topic: `${this.fan.subsystemName}` });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  // Сброс ошибки
+  public async resetError() {
+    if (this.mode != SystemMode.ERROR) {
+      this.bus.emit(`MQTTSend`, { value: "clear", topic: "ERROR" });
+      return;
+    }
+    if (this.fire.value === false) return;
+    this.fan.resetErr();
+    this.damper.resetErr();
+    this.mode = SystemMode.HANDMODE;
+    this.stage = SystemStage.STOP;
+    this.bus.emit(`MQTTSend`, { value: "clear", topic: "ERROR" });
+    this.errorStack = [];
+  }
+
+  // Установка ошибки
+  public async setError() {
+    this.mode = SystemMode.ERROR;
+    this.stage = SystemStage.STOPING;
+    await this.fan.stop();
+    await this.damper.close();
+    this.stage = SystemStage.STOP;
+    this.bus.emit(`MQTTSend`, { value: "ERROR", topic: "/mode/get" });
+    this.bus.emit(`MQTTSend`, { value: "false", topic: `${this.fan.subsystemName}` });
+  }
+
+  // Ошибка по пожару
+  public fireStop = (value: boolean) => {
+    if (!value) {
+      this.bus.emit(`MQTTSend`, { value: "Пожар", topic: "ERROR" });
+      this.errorStack.push("Пожар");
+      this.fan.stop();
+      this.damper.close();
+      this.mode = SystemMode.ERROR;
+      this.stage = SystemStage.STOP;
+      this.bus.emit(`MQTTSend`, { value: "ERROR", topic: "/mode/get" });
+      this.bus.emit(`MQTTSend`, { value: "false", topic: `${this.fan.subsystemName}` });
+    } else {
+      if (this.fan.mode === FanMode.ERROR || this.damper.mode === DamperMode.ERROR) return;
+      this.resetError();
+    }
+  };
+  public getState = () => {
+    this.errorStack.forEach((error) => {
+      this.bus.emit(`MQTTSend`, { value: error, topic: "ERROR" });
+    });
+
+    if (this.mode === SystemMode.HANDMODE && (this.stage === SystemStage.STARTING || this.stage === SystemStage.WORKING))
+      this.bus.emit(`MQTTSend`, { value: "START", topic: "/mode/get" });
+    if (this.mode === SystemMode.HANDMODE && (this.stage === SystemStage.STOPING || this.stage === SystemStage.STOP))
+      this.bus.emit(`MQTTSend`, { value: "STOP", topic: "/mode/get" });
+    if (this.mode === SystemMode.AUTO) this.bus.emit(`MQTTSend`, { value: "AUTO", topic: "/mode/get" });
+    if (this.mode === SystemMode.ERROR) this.bus.emit(`MQTTSend`, { value: "ERROR", topic: "/mode/get" });
+
+    if (this.fan.mode === FanMode.WORKING || this.fan.mode === FanMode.STARTING) {
+      this.bus.emit(`MQTTSend`, { value: "true", topic: `${this.fan.subsystemName}` });
+    } else {
+      this.bus.emit(`MQTTSend`, { value: "false", topic: `${this.fan.subsystemName}` });
+    }
+  };
+}

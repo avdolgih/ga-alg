@@ -1,0 +1,9 @@
+export enum subSystemMode {
+  WORKING = "WORKING",
+  STARTING = "STARTING",
+  PURGING = "PURGING",
+  STOPING = "STOPING",
+  WAITING = "WAITING",
+  ERROR = "ERROR",
+  UNKNOWN = "UNKNOWN",
+}

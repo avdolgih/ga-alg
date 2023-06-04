@@ -1,0 +1,4 @@
+sudo apt install nodejs npm mosquitto -y
+sudo npm i -g yarn n pm2@latest
+sudo n latest
+sudo pm2 startup
