@@ -2,7 +2,7 @@ import type { Client } from "mqtt";
 import mqtt from "mqtt/dist/mqtt.min";
 
 export default class MQTT {
-  private static readonly mqtt: Client = mqtt.connect("ws://10.0.0.122:8080");
+  private static readonly mqtt: Client = mqtt.connect("ws://localhost:8080");
 
   public static send(topic: string, data: string) {
     console.log({ topic, data });

@@ -3,8 +3,7 @@
     {
       "name": "hmi",
       "script": "yarn",
-      "args": "preview",
-      "watch": true
+      "args": "preview"
     }
   ]
 }

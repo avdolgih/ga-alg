@@ -442,7 +442,7 @@ export default {
   V14: new HMI([
     new Label(370, 40, 600, 100, "", 80, "ША В14"),
     new Label(100, 200, 150, 0, "black", 55, "В14"),
-    new Switch(400, 200, 200, 0, "black", 55, new TopicBool("/В14", "Работает", "Ожидает")),
+    new Switch(400, 200, 200, 0, "black", 55, new TopicBool("В14", "Работает", "Ожидает")),
     new Button(
       15,
       380,

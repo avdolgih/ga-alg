@@ -9,12 +9,12 @@ export default class CWT_TM_2_PT1000 extends Module {
     // Устанавливаем зависимости
 
     this.AIReg1.setParent(this);
-    this.AIreg2.setParent(this);
+    // this.AIreg2.setParent(this);
     // this.AIreg3.setParent(this);
     // this.AIreg4.setParent(this);
 
     this.RTD1.setParent(this.AIReg1);
-    this.RTD2.setParent(this.AIreg2);
+    // this.RTD2.setParent(this.AIreg2);
     // this.RTD3.setParent(this.AIreg3);
     // this.RTD4.setParent(this.AIreg4);
 
@@ -26,13 +26,13 @@ export default class CWT_TM_2_PT1000 extends Module {
   // Определяем регистры
 
   public AIReg1 = new AnalogOutputRegister(0x40);
-  public AIreg2 = new AnalogOutputRegister(0x42);
+  // public AIreg2 = new AnalogOutputRegister(0x42);
   // public AIreg3 = new AnalogOutputRegister(20);
   // public AIreg4 = new AnalogOutputRegister(21);
 
   //   Определяем порты
   public RTD1 = new AnalogInput();
-  public RTD2 = new AnalogInput();
+  // public RTD2 = new AnalogInput();
   // public RTD3 = new AnalogInput();
   // public RTD4 = new AnalogInput();
 }

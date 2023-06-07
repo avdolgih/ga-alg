@@ -64,6 +64,7 @@ export default class FDH2_D_fire_purge_machine {
     this.systemName = systemName;
     this.bus = bus;
 
+    this.inletTemperature.subscribe(this.tempWatcher);
     this.setTempValue = 20;
 
     this.inletDamper = new Damper("Общая", "Inlet", this.bus, 10000, this.supplyDamper0, this.damperActuatorInlet);
@@ -122,6 +123,12 @@ export default class FDH2_D_fire_purge_machine {
       this.setError(payload);
     });
   }
+  // Функция-наблюдатель для температуры
+  public tempWatcher = async (value: number) => {
+    console.log("NEW TEMPERAUTRE");
+
+    this.bus.emit(`MQTTSend`, { value, topic: "/heater/get" });
+  };
 
   // Переменные
   private _setTempValue: AlgAnalogInput = new AlgAnalogInput();
@@ -246,6 +253,7 @@ export default class FDH2_D_fire_purge_machine {
       }
     } catch (error) {}
   }
+
   public async auto() {
     try {
       if (this.mode === SystemMode.ERROR) return;

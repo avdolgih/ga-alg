@@ -62,7 +62,7 @@ export class AnalogOutputRegister extends Register {
   public read = async () => {
     let res = await this.parent.FC3readHoldingRegisters(this);
     this.childs.forEach((child, i) => {
-      child.setValue(res[i]);
+      child.setValue(res[i] / 1000);
     });
     return res;
   };

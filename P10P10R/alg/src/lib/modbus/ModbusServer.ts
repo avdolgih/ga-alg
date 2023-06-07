@@ -2,23 +2,26 @@ import ModbusRTU from "modbus-serial";
 import Module from "./Module";
 import TreeComponent from "../utils/TreeComponent";
 import { WriteCoilResult } from "modbus-serial/ModbusRTU";
+
 export default class ModbusServer extends TreeComponent {
   childs: Module[] = [];
   private client: ModbusRTU = new ModbusRTU();
   private port: string;
   private baudRate: number;
+  public writeReady: WriteReady = new WriteReady();
+
   constructor(port: string, baudRate: number) {
     super();
     this.baudRate = baudRate;
     this.port = port;
 
     this.client.setTimeout(5000);
+    this.writeReady.value = false;
   }
 
   private slaveID: number = 0;
 
   public pooling: boolean = true;
-  public writeReady: boolean = false;
 
   public async createConnection() {
     await this.client.connectRTU(this.port, { baudRate: this.baudRate });
@@ -32,7 +35,7 @@ export default class ModbusServer extends TreeComponent {
         let module = this.childs[i];
         for (let j = 0; j < module.childs.length; j++) {
           if (this.pooling) {
-            this.writeReady = false;
+            this.writeReady.value = false;
 
             await new Promise(async (resolve) => {
               await module.childs[j].read();
@@ -41,7 +44,13 @@ export default class ModbusServer extends TreeComponent {
               }, 150);
             });
           } else {
-            this.writeReady = true;
+            this.pooling = false;
+            await new Promise(async (resolve) => {
+              setTimeout(() => {
+                resolve(null);
+                this.writeReady.value = true;
+              }, 150);
+            });
           }
         }
       }
@@ -62,8 +71,6 @@ export default class ModbusServer extends TreeComponent {
   // Функции чтения
   public FC1ReadCoils = async (slaveID: number, addr: number, len: number): Promise<boolean[]> => {
     try {
-      console.log("FC1");
-
       if (this.slaveID != slaveID) {
         await this.client.setID(slaveID);
         await new Promise((resolve) => {
@@ -73,7 +80,7 @@ export default class ModbusServer extends TreeComponent {
         });
       }
 
-      let res = await this.client.readCoils(addr, 8);
+      let res = await this.client.readCoils(addr, len);
 
       if (res != undefined) {
         return res.data;
@@ -87,7 +94,6 @@ export default class ModbusServer extends TreeComponent {
   };
   public FC2readDiscreteInputs = async (slaveID: number, addr: number, arg: number): Promise<boolean[]> => {
     try {
-      console.log("FC2");
       if (this.slaveID != slaveID) {
         await this.client.setID(slaveID);
         await new Promise((resolve) => {
@@ -111,7 +117,6 @@ export default class ModbusServer extends TreeComponent {
   };
   public FC3readHoldingRegisters = async (slaveID: number, addr: number, len: number): Promise<number[]> => {
     try {
-      console.log("FC3");
       if (this.slaveID != slaveID) {
         await this.client.setID(slaveID);
         await new Promise((resolve) => {
@@ -135,10 +140,9 @@ export default class ModbusServer extends TreeComponent {
   };
   public FC4readInputRegisters = async (slaveID: number, addr: number, len: number): Promise<number[]> => {
     try {
-      console.log("FC4");
       this.client.setID(slaveID);
 
-      let res = await this.client.readInputRegisters(addr, 8);
+      let res = await this.client.readInputRegisters(addr, len);
 
       if (res != undefined) {
         return res.data;
@@ -160,15 +164,13 @@ export default class ModbusServer extends TreeComponent {
       console.log("Остановка чтения");
       this.pooling = false;
 
-      let promise = await new Promise((resolve) => {
-        let interval = setInterval(() => {
-          if (this.writeReady) {
-            clearInterval(interval);
-          }
-        }, 50);
-        console.log(!this.writeReady);
-
-        resolve(null);
+      await new Promise((resolve) => {
+        let resolver = function () {
+          console.log("before");
+          resolve(null);
+          console.log("after");
+        };
+        this.writeReady.subscribe(resolver);
       });
 
       console.log("Запись");
@@ -191,9 +193,21 @@ export default class ModbusServer extends TreeComponent {
   public FC6writeRegister = async (slaveID: number, addr: number, value: number) => {
     try {
       console.log({ slaveID, addr, value });
+      this.client.setID(slaveID);
+
+      console.log("Остановка чтения");
       this.pooling = false;
 
-      this.client.setID(slaveID);
+      await new Promise((resolve) => {
+        let resolver = function () {
+          console.log("before");
+          resolve(null);
+          console.log("after");
+        };
+        this.writeReady.subscribe(resolver);
+      });
+
+      console.log("Запись");
 
       let res = await this.client.writeRegister(addr, value);
       this.pooling = true;
@@ -210,9 +224,21 @@ export default class ModbusServer extends TreeComponent {
   public FC15writeCoils = async (slaveID: number, addr: number, valueAry: boolean[]) => {
     try {
       console.log({ slaveID, addr, valueAry });
+      this.client.setID(slaveID);
+
+      console.log("Остановка чтения");
       this.pooling = false;
 
-      this.client.setID(slaveID);
+      await new Promise((resolve) => {
+        let resolver = function () {
+          console.log("before");
+          resolve(null);
+          console.log("after");
+        };
+        this.writeReady.subscribe(resolver);
+      });
+
+      console.log("Запись");
 
       let res = await this.client.writeCoils(addr, valueAry);
       this.pooling = true;
@@ -229,9 +255,21 @@ export default class ModbusServer extends TreeComponent {
   public FC16writeRegisters = async (slaveID: number, addr: number, valueAry: number[]) => {
     try {
       console.log({ slaveID, addr, valueAry });
+      this.client.setID(slaveID);
+
+      console.log("Остановка чтения");
       this.pooling = false;
 
-      this.client.setID(slaveID);
+      await new Promise((resolve) => {
+        let resolver = function () {
+          console.log("before");
+          resolve(null);
+          console.log("after");
+        };
+        this.writeReady.subscribe(resolver);
+      });
+
+      console.log("Запись");
 
       let res = await this.client.writeRegisters(addr, valueAry);
       this.pooling = true;
@@ -245,4 +283,29 @@ export default class ModbusServer extends TreeComponent {
       process.exit();
     }
   };
+}
+
+class WriteReady {
+  private _value: boolean = false;
+  private subscribers: Array<(value: boolean) => void> = [];
+
+  get value() {
+    return this._value;
+  }
+
+  set value(value: boolean) {
+    if (this._value === value) return;
+
+    this._value = value;
+    if (value) {
+      this.subscribers.forEach((sub) => {
+        sub(value);
+      });
+      this.subscribers = [];
+    }
+  }
+
+  public subscribe(callback: (value: boolean) => void) {
+    this.subscribers.push(callback);
+  }
 }
